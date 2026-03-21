@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Forecast Summary — InvenTrack{% endblock %}
+{% block page_title %}Forecast Summary{% endblock %}
+{% block page_sub %}30-day demand outlook for all products{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('forecasting.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+{% if summaries %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Product</th><th>Avg daily</th><th>Forecast 30d</th><th>Current stock</th><th>Days cover</th><th>Model</th><th>MAE</th><th></th></tr></thead>
+      <tbody>
+        {% for item in summaries %}
+        {% set p = item.product %}{% set s = item.summary %}
+        {% set stock_qty = p.stock.quantity if p.stock else 0 %}
+        {% set days = (stock_qty / s.avg_daily)|int if s.avg_daily > 0 else 999 %}
+        <tr>
+          <td><strong>{{ p.name }}</strong><br><code class="fs-sm">{{ p.sku }}</code></td>
+          <td>{{ s.avg_daily }}</td>
+          <td class="fw-bold" style="color:var(--primary)">{{ s.forecast_30d }}</td>
+          <td>{{ stock_qty }}</td>
+          <td>
+            <span class="badge {% if days < 7 %}badge-danger{% elif days < 14 %}badge-warning{% else %}badge-success{% endif %}">{{ days }}d</span>
+          </td>
+          <td><span class="badge badge-info">{{ s.best_model }}</span></td>
+          <td class="text-muted">{{ s.rf_mae or '—' }}</td>
+          <td><a href="{{ url_for('forecasting.product_forecast', product_id=p.id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card"><div class="empty-state"><i class="bi bi-graph-up"></i><p>No products have enough data for forecasting yet.</p></div></div>
+{% endif %}
+{% endblock %}

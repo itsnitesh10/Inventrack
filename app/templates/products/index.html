@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Products — InvenTrack{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block page_sub %}Manage your product catalog{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('products.categories') }}" class="btn btn-outline btn-sm"><i class="bi bi-folder"></i> Categories</a>
+  <a href="{{ url_for('products.add') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Product</a>
+{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:16px">
+  <div class="card-body" style="padding:14px 20px">
+    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="input-group" style="flex:2;min-width:200px">
+        <span class="input-icon"><i class="bi bi-search"></i></span>
+        <input type="text" name="search" class="form-control" placeholder="Search name or SKU..." value="{{ search }}"/>
+      </div>
+      <select name="category_id" class="form-select" style="flex:1;min-width:150px">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if category_id|int == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+      {% if search or category_id %}<a href="{{ url_for('products.index') }}" class="btn btn-outline">Clear</a>{% endif %}
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>All Products</span>
+    <span class="badge badge-primary">{{ products|length }} items</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Unit Price</th><th>Stock</th><th>Reorder</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><code>{{ p.sku }}</code></td>
+          <td><strong>{{ p.name }}</strong>{% if p.description %}<br><span class="fs-sm text-muted">{{ p.description[:50] }}{% if p.description|length > 50 %}...{% endif %}</span>{% endif %}</td>
+          <td>{% if p.category %}<span class="badge badge-gray">{{ p.category.name }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="fw-bold">&#8377;{{ '%.2f'|format(p.unit_price) }}</td>
+          <td>
+            {% if p.stock %}
+              {% if p.stock.quantity == 0 %}<span class="badge badge-danger">Out of stock</span>
+              {% elif p.stock.is_low %}<span class="badge badge-warning">{{ p.stock.quantity }} ⚠</span>
+              {% else %}<span class="badge badge-success">{{ p.stock.quantity }}</span>{% endif %}
+            {% else %}<span class="badge badge-gray">—</span>{% endif %}
+          </td>
+          <td class="text-muted">{{ p.reorder_level }}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <a href="{{ url_for('products.view', id=p.id) }}" class="btn btn-sm btn-outline"><i class="bi bi-eye"></i></a>
+              <a href="{{ url_for('products.edit', id=p.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+              <form method="POST" action="{{ url_for('products.delete', id=p.id) }}" style="display:inline" onsubmit="return confirm('Remove this product?')">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-tags"></i><p>No products found. <a href="{{ url_for('products.add') }}">Add your first product</a></p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

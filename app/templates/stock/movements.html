@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Stock History — InvenTrack{% endblock %}
+{% block page_title %}Stock Movement Log{% endblock %}
+{% block page_sub %}Complete history of all stock changes{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('stock.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:16px">
+  <div class="card-body" style="padding:14px 20px">
+    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap">
+      <select name="product_id" class="form-select" style="flex:2;min-width:160px">
+        <option value="">All Products</option>
+        {% for p in products %}<option value="{{ p.id }}" {% if product_id|int == p.id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+      <select name="movement_type" class="form-select" style="flex:1;min-width:140px">
+        <option value="">All Types</option>
+        <option value="in"         {% if movement_type == 'in'         %}selected{% endif %}>Stock In</option>
+        <option value="out"        {% if movement_type == 'out'        %}selected{% endif %}>Stock Out</option>
+        <option value="adjustment" {% if movement_type == 'adjustment' %}selected{% endif %}>Adjustment</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Date</th><th>Product</th><th>Type</th><th>Quantity</th><th>Reference</th><th>By</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for m in movements.items %}
+        <tr>
+          <td class="text-muted fs-sm">{{ m.created_at.strftime('%d %b %Y %H:%M') }}</td>
+          <td><strong>{{ m.product.name }}</strong></td>
+          <td>
+            {% if m.movement_type == 'in'         %}<span class="badge badge-success">In</span>
+            {% elif m.movement_type == 'out'       %}<span class="badge badge-danger">Out</span>
+            {% else %}<span class="badge badge-warning">Adjustment</span>{% endif %}
+          </td>
+          <td class="fw-bold">{{ m.quantity }}</td>
+          <td><code>{{ m.reference or '—' }}</code></td>
+          <td class="text-muted">{{ m.user.username if m.user else '—' }}</td>
+          <td class="text-muted fs-sm">{{ m.notes or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-clock-history"></i><p>No movements found.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if movements.pages > 1 %}
+  <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:center">
+    <div class="pagination">
+      {% for p in movements.iter_pages() %}
+        {% if p %}<a class="page-link {% if p == movements.page %}active{% endif %}" href="?page={{ p }}&product_id={{ product_id }}&movement_type={{ movement_type }}">{{ p }}</a>{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

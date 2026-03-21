@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Stock Alerts — InvenTrack{% endblock %}
+{% block page_title %}Stock Alerts{% endblock %}
+{% block page_sub %}Products that need attention{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('stock.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+{% if out_of_stock %}
+<h6 style="font-weight:700;color:var(--danger);margin-bottom:10px"><i class="bi bi-x-circle"></i> Out of Stock ({{ out_of_stock|length }})</h6>
+<div class="card" style="margin-bottom:20px">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Product</th><th>SKU</th><th>Reorder Level</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for s in out_of_stock %}
+        <tr>
+          <td><strong>{{ s.product.name }}</strong></td>
+          <td><code>{{ s.product.sku }}</code></td>
+          <td>{{ s.product.reorder_level }}</td>
+          <td><a href="{{ url_for('stock.adjust', product_id=s.product.id) }}" class="btn btn-sm btn-danger"><i class="bi bi-plus-lg"></i> Restock Now</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% if low_stock %}
+{% set non_zero = low_stock | selectattr('quantity', 'gt', 0) | list %}
+{% if non_zero %}
+<h6 style="font-weight:700;color:var(--warning);margin-bottom:10px"><i class="bi bi-exclamation-circle"></i> Low Stock ({{ non_zero|length }})</h6>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Product</th><th>SKU</th><th>Current Stock</th><th>Reorder Level</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for s in non_zero %}
+        <tr>
+          <td><strong>{{ s.product.name }}</strong></td>
+          <td><code>{{ s.product.sku }}</code></td>
+          <td><span class="badge badge-warning">{{ s.quantity }} units</span></td>
+          <td>{{ s.product.reorder_level }}</td>
+          <td><a href="{{ url_for('stock.adjust', product_id=s.product.id) }}" class="btn btn-sm btn-warning"><i class="bi bi-plus-lg"></i> Restock</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% if not out_of_stock and not low_stock %}
+<div class="card"><div class="empty-state" style="padding:80px 20px">
+  <i class="bi bi-check-circle" style="color:var(--success);opacity:1;font-size:56px"></i>
+  <p style="font-size:16px;font-weight:600;color:var(--success);margin-top:12px">All stock levels are healthy!</p>
+  <p>No products are below their reorder level.</p>
+</div></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — InvenTrack{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Welcome back, {{ current_user.username }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('products.add') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> Add Product
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Row -->
+<div class="row" style="margin-bottom:8px">
+  <div class="col-6 col-4" style="width:20%;min-width:160px">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-icon"><i class="bi bi-tags"></i></div>
+      <div class="kpi-value">{{ total_products }}</div>
+      <div class="kpi-label">Total Products</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:20%;min-width:160px">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+      <div class="kpi-value">&#8377;{{ '{:,.0f}'.format(total_inventory_value|float) }}</div>
+      <div class="kpi-label">Inventory Value</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:20%;min-width:160px">
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="kpi-value">{{ low_stock_count }}</div>
+      <div class="kpi-label">Low Stock Alerts</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:20%;min-width:160px">
+    <div class="kpi-card kpi-cyan">
+      <div class="kpi-icon"><i class="bi bi-cart3"></i></div>
+      <div class="kpi-value">{{ pending_orders }}</div>
+      <div class="kpi-label">Pending Orders</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:20%;min-width:160px">
+    <div class="kpi-card kpi-red">
+      <div class="kpi-icon"><i class="bi bi-x-circle"></i></div>
+      <div class="kpi-value">{{ out_of_stock_count }}</div>
+      <div class="kpi-label">Out of Stock</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row" style="margin-top:8px">
+  <div class="col" style="flex:2">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-bar-chart" style="color:var(--primary);margin-right:8px"></i>Stock movements — last 30 days</span>
+        <div style="display:flex;gap:8px">
+          <span class="badge badge-primary">In</span>
+          <span class="badge badge-danger">Out</span>
+        </div>
+      </div>
+      <div class="card-body"><canvas id="movementsChart" height="90"></canvas></div>
+    </div>
+  </div>
+  <div class="col" style="flex:1">
+    <div class="card" style="height:100%">
+      <div class="card-header"><span><i class="bi bi-pie-chart" style="color:var(--primary);margin-right:8px"></i>Stock by category</span></div>
+      <div class="card-body" style="display:flex;align-items:center;justify-content:center">
+        <canvas id="categoryChart" style="max-height:220px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row" style="margin-top:0">
+  <div class="col" style="flex:2">
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-trophy" style="color:var(--warning);margin-right:8px"></i>Top products by demand</span></div>
+      <div class="card-body"><canvas id="topProductsChart" height="90"></canvas></div>
+    </div>
+  </div>
+  <div class="col" style="flex:1">
+    <div class="card" style="height:100%">
+      <div class="card-header"><span><i class="bi bi-clipboard-data" style="color:var(--primary);margin-right:8px"></i>Order status</span></div>
+      <div class="card-body" style="display:flex;align-items:center;justify-content:center">
+        <canvas id="orderStatusChart" style="max-height:220px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row" style="margin-top:0">
+  <div class="col" style="flex:1">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-exclamation-circle" style="color:var(--warning);margin-right:8px"></i>Low stock alerts</span>
+        <a href="{{ url_for('stock.alerts') }}" class="btn btn-sm btn-outline" style="font-size:12px">View all</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Product</th><th>Stock</th><th>Reorder at</th><th></th></tr></thead>
+          <tbody>
+            {% for s in low_stock_products %}
+            <tr>
+              <td><strong>{{ s.product.name }}</strong><br><span class="fs-sm text-muted">{{ s.product.sku }}</span></td>
+              <td>
+                {% if s.quantity == 0 %}
+                  <span class="badge badge-danger">Out of stock</span>
+                {% else %}
+                  <span class="badge badge-warning">{{ s.quantity }} units</span>
+                {% endif %}
+              </td>
+              <td class="text-muted">{{ s.product.reorder_level }}</td>
+              <td><a href="{{ url_for('stock.adjust', product_id=s.product.id) }}" class="btn btn-sm btn-outline-primary">Restock</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">
+              <div class="empty-state" style="padding:30px 20px">
+                <i class="bi bi-check-circle" style="color:var(--success);font-size:32px;opacity:1"></i>
+                <p style="margin-top:8px;color:var(--success)">All stock levels healthy!</p>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col" style="flex:1.4">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-cart3" style="color:var(--primary);margin-right:8px"></i>Recent orders</span>
+        <a href="{{ url_for('orders.index') }}" class="btn btn-sm btn-outline" style="font-size:12px">View all</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Order #</th><th>Supplier</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for o in recent_orders %}
+            <tr>
+              <td><a href="{{ url_for('orders.view', id=o.id) }}" style="color:var(--primary);font-weight:600;text-decoration:none">{{ o.order_number }}</a></td>
+              <td>{{ o.supplier or '—' }}</td>
+              <td class="fw-bold">&#8377;{{ '{:,.0f}'.format((o.total_cost or 0)|float) }}</td>
+              <td>
+                {% if o.status == 'pending'   %}<span class="badge badge-warning">Pending</span>
+                {% elif o.status == 'received' %}<span class="badge badge-success">Received</span>
+                {% else %}<span class="badge badge-danger">Cancelled</span>{% endif %}
+              </td>
+              <td class="text-muted fs-sm">{{ o.created_at.strftime('%d %b') }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5"><div class="empty-state" style="padding:30px 20px"><p>No orders yet</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card" style="margin-top:0">
+  <div class="card-header">
+    <span><i class="bi bi-clock-history" style="color:var(--primary);margin-right:8px"></i>Recent stock activity (last 7 days)</span>
+    <a href="{{ url_for('stock.movements') }}" class="btn btn-sm btn-outline" style="font-size:12px">Full history</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Time</th><th>Product</th><th>Type</th><th>Qty</th><th>By</th><th>Reference</th></tr></thead>
+      <tbody>
+        {% for m in recent_movements %}
+        <tr>
+          <td class="text-muted fs-sm">{{ m.created_at.strftime('%d %b %H:%M') }}</td>
+          <td><strong>{{ m.product.name }}</strong></td>
+          <td>
+            {% if m.movement_type == 'in'         %}<span class="badge badge-success">In</span>
+            {% elif m.movement_type == 'out'       %}<span class="badge badge-danger">Out</span>
+            {% else %}<span class="badge badge-warning">Adj</span>{% endif %}
+          </td>
+          <td class="fw-bold">{{ m.quantity }}</td>
+          <td class="text-muted">{{ m.user.username if m.user else '—' }}</td>
+          <td><code>{{ m.reference or '—' }}</code></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6"><div class="empty-state" style="padding:24px"><p>No activity in the last 7 days</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const C=['#4f46e5','#059669','#d97706','#dc2626','#0891b2','#7c3aed','#0f766e','#b45309'];
+async function charts(){
+  try{
+    const mv=await fetch('/dashboard/api/movements-trend').then(r=>r.json());
+    new Chart(document.getElementById('movementsChart'),{type:'bar',data:{labels:mv.labels,datasets:[
+      {label:'Stock In', data:mv.in,  backgroundColor:'rgba(79,70,229,0.75)',borderRadius:4,borderSkipped:false},
+      {label:'Stock Out',data:mv.out, backgroundColor:'rgba(220,38,38,0.65)',borderRadius:4,borderSkipped:false}
+    ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10},grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f1f5f9'}}}}});
+  }catch(e){}
+  try{
+    const cat=await fetch('/dashboard/api/stock-by-category').then(r=>r.json());
+    new Chart(document.getElementById('categoryChart'),{type:'doughnut',data:{labels:cat.labels.length?cat.labels:['No data'],datasets:[{data:cat.values.length?cat.values:[1],backgroundColor:C,borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}}}}});
+  }catch(e){}
+  try{
+    const tp=await fetch('/dashboard/api/top-products').then(r=>r.json());
+    new Chart(document.getElementById('topProductsChart'),{type:'bar',data:{labels:tp.labels.length?tp.labels:['No data'],datasets:[{label:'Units out',data:tp.values.length?tp.values:[0],backgroundColor:C,borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f1f5f9'}},y:{grid:{display:false}}}}});
+  }catch(e){}
+  try{
+    const os=await fetch('/dashboard/api/order-status').then(r=>r.json());
+    new Chart(document.getElementById('orderStatusChart'),{type:'doughnut',data:{labels:['Pending','Received','Cancelled'],datasets:[{data:os.values,backgroundColor:['#f59e0b','#059669','#dc2626'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}}}}});
+  }catch(e){}
+}
+charts();
+</script>
+{% endblock %}

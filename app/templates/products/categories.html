@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Categories — InvenTrack{% endblock %}
+{% block page_title %}Categories{% endblock %}
+{% block page_sub %}Organise products into groups{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('products.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back to Products</a>{% endblock %}
+{% block content %}
+<div style="max-width:720px">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">Add New Category</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('products.add_category') }}" style="display:flex;gap:10px;flex-wrap:wrap">
+        <input type="text" name="name" class="form-control" placeholder="Category name" required style="flex:1;min-width:160px"/>
+        <input type="text" name="description" class="form-control" placeholder="Description (optional)" style="flex:2;min-width:200px"/>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add</button>
+      </form>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>All Categories</span><span class="badge badge-primary">{{ categories|length }}</span></div>
+    <div class="table-responsive">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Description</th><th>Products</th><th></th></tr></thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td><strong>{{ cat.name }}</strong></td>
+            <td class="text-muted">{{ cat.description or '—' }}</td>
+            <td><span class="badge badge-primary">{{ cat.products|length }}</span></td>
+            <td>
+              <form method="POST" action="{{ url_for('products.delete_category', id=cat.id) }}" style="display:inline" onsubmit="return confirm('Delete this category?')">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4"><div class="empty-state"><i class="bi bi-folder"></i><p>No categories yet.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

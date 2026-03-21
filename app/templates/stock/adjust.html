@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Adjust Stock — InvenTrack{% endblock %}
+{% block page_title %}Adjust Stock{% endblock %}
+{% block page_sub %}Record a stock movement{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('stock.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<div style="max-width:580px">
+  <div class="card">
+    <div class="card-header">Stock Movement</div>
+    <div class="card-body">
+      <form method="POST">
+        <div style="margin-bottom:16px">
+          <label class="form-label">Product <span style="color:var(--danger)">*</span></label>
+          <select name="product_id" class="form-select" required>
+            <option value="">— Select a product —</option>
+            {% for p in products %}
+            <option value="{{ p.id }}" {% if selected_product and selected_product.id == p.id %}selected{% endif %}>
+              {{ p.name }} ({{ p.sku }}){% if p.stock %} — {{ p.stock.quantity }} in stock{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Movement Type <span style="color:var(--danger)">*</span></label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <label class="form-check" style="background:var(--success-light);padding:10px 16px;border-radius:8px;border:2px solid transparent;cursor:pointer" id="lbl-in">
+              <input class="form-check-input" type="radio" name="movement_type" value="in" id="typeIn" checked onchange="styleRadios()"/>
+              <span style="color:var(--success);font-weight:600"><i class="bi bi-arrow-down-circle"></i> Stock In</span>
+            </label>
+            <label class="form-check" style="background:var(--danger-light);padding:10px 16px;border-radius:8px;border:2px solid transparent;cursor:pointer" id="lbl-out">
+              <input class="form-check-input" type="radio" name="movement_type" value="out" id="typeOut" onchange="styleRadios()"/>
+              <span style="color:var(--danger);font-weight:600"><i class="bi bi-arrow-up-circle"></i> Stock Out</span>
+            </label>
+            <label class="form-check" style="background:var(--warning-light);padding:10px 16px;border-radius:8px;border:2px solid transparent;cursor:pointer" id="lbl-adj">
+              <input class="form-check-input" type="radio" name="movement_type" value="adjustment" id="typeAdj" onchange="styleRadios()"/>
+              <span style="color:var(--warning);font-weight:600"><i class="bi bi-sliders"></i> Adjustment</span>
+            </label>
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Quantity <span style="color:var(--danger)">*</span></label>
+          <input type="number" name="quantity" class="form-control" min="1" required placeholder="Enter quantity"/>
+          <div class="form-text" id="adjNote" style="display:none">Sets stock to this exact value.</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Reference / PO Number</label>
+          <input type="text" name="reference" class="form-control" placeholder="e.g. PO-2024-001"/>
+        </div>
+        <div style="margin-bottom:24px">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Movement</button>
+          <a href="{{ url_for('stock.index') }}" class="btn btn-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function styleRadios(){
+  const borders={in:'var(--success)',out:'var(--danger)',adjustment:'var(--warning)'};
+  document.querySelectorAll('input[name="movement_type"]').forEach(r=>{
+    const lbl=r.closest('label');
+    lbl.style.borderColor=r.checked?borders[r.value]:'transparent';
+  });
+  document.getElementById('adjNote').style.display=
+    document.getElementById('typeAdj').checked?'block':'none';
+}
+styleRadios();
+</script>
+{% endblock %}

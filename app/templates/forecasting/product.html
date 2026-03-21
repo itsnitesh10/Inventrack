@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Forecast: {{ product.name }}{% endblock %}
+{% block page_title %}{{ product.name }}{% endblock %}
+{% block page_sub %}30-day demand forecast{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('forecasting.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+{% if result.status == 'insufficient_data' %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i><div>{{ result.message }}</div></div>
+{% else %}
+<div class="row" style="margin-bottom:8px">
+  <div class="col-6 col-4" style="width:25%;min-width:150px">
+    <div class="card" style="text-align:center;padding:20px">
+      <div class="text-muted fs-sm" style="margin-bottom:4px">Avg daily demand</div>
+      <div style="font-size:26px;font-weight:700;color:var(--primary)">{{ result.avg_daily_demand }}</div>
+      <div class="text-muted fs-sm">units/day</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:25%;min-width:150px">
+    <div class="card" style="text-align:center;padding:20px">
+      <div class="text-muted fs-sm" style="margin-bottom:4px">Forecast (30 days)</div>
+      <div style="font-size:26px;font-weight:700;color:var(--success)">{{ result.forecast_total }}</div>
+      <div class="text-muted fs-sm">total units</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:25%;min-width:150px">
+    <div class="card" style="text-align:center;padding:20px">
+      <div class="text-muted fs-sm" style="margin-bottom:4px">Best model</div>
+      <div style="font-size:14px;font-weight:600;color:var(--info)">{{ result.best_model }}</div>
+      <div class="text-muted fs-sm">MAE: {{ result.rf_mae or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-4" style="width:25%;min-width:150px">
+    <div class="card" style="text-align:center;padding:20px">
+      <div class="text-muted fs-sm" style="margin-bottom:4px">Current stock</div>
+      <div style="font-size:26px;font-weight:700;color:{% if product.stock and product.stock.is_low %}var(--warning){% else %}var(--success){% endif %}">{{ product.stock.quantity if product.stock else 0 }}</div>
+      <div class="text-muted fs-sm">units on hand</div>
+    </div>
+  </div>
+</div>
+
+{% if product.stock %}
+{% set days_cover = (product.stock.quantity / result.avg_daily_demand)|int if result.avg_daily_demand > 0 else 999 %}
+<div class="alert {% if days_cover < 7 %}alert-danger{% elif days_cover < 14 %}alert-warning{% else %}alert-success{% endif %}">
+  <i class="bi bi-calendar-check{% if days_cover < 7 %}-fill{% endif %}"></i>
+  <div><strong>Stock coverage:</strong> Current stock will last approximately <strong>{{ days_cover }} days</strong> at this demand rate.
+  {% if days_cover < 14 %}<a href="{{ url_for('orders.create') }}">Create a purchase order →</a>{% endif %}</div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:16px">
+  <div class="card-header">Historical demand vs 30-day forecast</div>
+  <div class="card-body"><canvas id="forecastChart" height="90"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-header">Forecast — next 30 days</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Date</th><th>Predicted demand</th></tr></thead>
+      <tbody>
+        {% for i in range(result.forecast_dates|length) %}
+        <tr>
+          <td class="text-muted">{{ result.forecast_dates[i] }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="background:var(--primary);opacity:.5;border-radius:3px;height:8px;width:{{ [result.forecast_values[i] * 3, 180]|min }}px"></div>
+              <strong>{{ result.forecast_values[i] }}</strong>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if result.status == 'ok' %}
+<script>
+const hd = {{ result.historical_dates | tojson }};
+const hv = {{ result.historical_values | tojson }};
+const fd = {{ result.forecast_dates | tojson }};
+const fv = {{ result.forecast_values | tojson }};
+new Chart(document.getElementById('forecastChart'),{type:'line',data:{labels:[...hd,...fd],datasets:[
+  {label:'Historical',data:[...hv,...Array(fd.length).fill(null)],borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,0.08)',fill:true,tension:.3,pointRadius:2,borderWidth:2},
+  {label:'Forecast', data:[...Array(hd.length).fill(null),...fv],borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.08)',borderDash:[6,3],fill:true,tension:.3,pointRadius:2,borderWidth:2}
+]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top'}},scales:{x:{ticks:{maxTicksLimit:12},grid:{color:'#f1f5f9'}},y:{beginAtZero:true,grid:{color:'#f1f5f9'}}}}});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ order.order_number }} — InvenTrack{% endblock %}
+{% block page_title %}{{ order.order_number }}{% endblock %}
+{% block page_sub %}{{ order.supplier or 'No supplier specified' }}{% endblock %}
+{% block topbar_actions %}
+  {% if order.status == 'pending' %}
+  <form method="POST" action="{{ url_for('orders.receive', id=order.id) }}" style="display:inline">
+    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark as received? Stock will be updated.')"><i class="bi bi-check-circle"></i> Mark Received</button>
+  </form>
+  <form method="POST" action="{{ url_for('orders.cancel', id=order.id) }}" style="display:inline">
+    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this order?')"><i class="bi bi-x-circle"></i> Cancel</button>
+  </form>
+  {% endif %}
+  <form method="POST" action="{{ url_for('orders.delete', id=order.id) }}" style="display:inline">
+    <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('Delete permanently?')"><i class="bi bi-trash"></i></button>
+  </form>
+{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-8">
+    <div class="card">
+      <div class="card-header">Order Items</div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Product</th><th>SKU</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            {% for item in order.items %}
+            <tr>
+              <td><strong>{{ item.product.name }}</strong></td>
+              <td><code>{{ item.product.sku }}</code></td>
+              <td>{{ item.quantity }}</td>
+              <td>&#8377;{{ '%.2f'|format(item.unit_price) }}</td>
+              <td class="fw-bold">&#8377;{{ '%.2f'|format(item.quantity * item.unit_price) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc">
+              <td colspan="4" style="text-align:right;font-weight:600;padding:14px 16px">Total:</td>
+              <td style="font-weight:700;color:var(--primary);font-size:17px;padding:14px 16px">&#8377;{{ '{:,.2f}'.format((order.total_cost or 0)|float) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card">
+      <div class="card-header">Order Info</div>
+      <div class="card-body">
+        <div style="margin-bottom:14px"><span class="text-muted fs-sm">Status</span><div style="margin-top:4px">
+          {% if order.status == 'pending'   %}<span class="badge badge-warning" style="font-size:13px;padding:5px 12px">Pending</span>
+          {% elif order.status == 'received' %}<span class="badge badge-success" style="font-size:13px;padding:5px 12px">Received</span>
+          {% else %}<span class="badge badge-danger" style="font-size:13px;padding:5px 12px">Cancelled</span>{% endif %}
+        </div></div>
+        <div style="margin-bottom:14px"><span class="text-muted fs-sm">Created by</span><div>{{ order.user.username if order.user else '—' }}</div></div>
+        <div style="margin-bottom:14px"><span class="text-muted fs-sm">Created on</span><div>{{ order.created_at.strftime('%d %b %Y %H:%M') }}</div></div>
+        {% if order.received_at %}<div style="margin-bottom:14px"><span class="text-muted fs-sm">Received on</span><div style="color:var(--success)">{{ order.received_at.strftime('%d %b %Y %H:%M') }}</div></div>{% endif %}
+        {% if order.notes %}<div><span class="text-muted fs-sm">Notes</span><div>{{ order.notes }}</div></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

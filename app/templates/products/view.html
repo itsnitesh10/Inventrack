@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} — InvenTrack{% endblock %}
+{% block page_title %}{{ product.name }}{% endblock %}
+{% block page_sub %}Product details{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+  <a href="{{ url_for('stock.adjust', product_id=product.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-plus-slash-minus"></i> Adjust Stock</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:640px">
+  <div class="card">
+    <div class="card-header">
+      <span>Product Information</span>
+      <a href="{{ url_for('products.index') }}" class="btn btn-sm btn-outline"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-6" style="margin-bottom:16px"><span class="text-muted fs-sm">SKU</span><div><code>{{ product.sku }}</code></div></div>
+        <div class="col-6" style="margin-bottom:16px"><span class="text-muted fs-sm">Category</span><div>{% if product.category %}<span class="badge badge-gray">{{ product.category.name }}</span>{% else %}—{% endif %}</div></div>
+        <div class="col-6" style="margin-bottom:16px"><span class="text-muted fs-sm">Unit Price</span><div class="fw-bold" style="color:var(--success);font-size:18px">&#8377;{{ '%.2f'|format(product.unit_price) }}</div></div>
+        <div class="col-6" style="margin-bottom:16px"><span class="text-muted fs-sm">Reorder Level</span><div class="fw-bold">{{ product.reorder_level }} units</div></div>
+        <div class="col-6" style="margin-bottom:16px">
+          <span class="text-muted fs-sm">Current Stock</span>
+          <div>
+            {% if product.stock %}
+              {% if product.stock.quantity == 0 %}<span class="badge badge-danger" style="font-size:14px;padding:5px 14px">Out of stock</span>
+              {% elif product.stock.is_low %}<span class="badge badge-warning" style="font-size:14px;padding:5px 14px">{{ product.stock.quantity }} — Low</span>
+              {% else %}<span class="badge badge-success" style="font-size:14px;padding:5px 14px">{{ product.stock.quantity }} units</span>{% endif %}
+            {% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="col-6" style="margin-bottom:16px"><span class="text-muted fs-sm">Added On</span><div>{{ product.created_at.strftime('%d %b %Y') }}</div></div>
+        {% if product.description %}
+        <div class="col-12"><span class="text-muted fs-sm">Description</span><div>{{ product.description }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

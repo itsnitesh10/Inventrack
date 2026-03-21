@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Stock — InvenTrack{% endblock %}
+{% block page_title %}Stock Levels{% endblock %}
+{% block page_sub %}Track inventory across all products{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('stock.alerts') }}" class="btn btn-outline btn-sm"><i class="bi bi-exclamation-triangle"></i> Alerts {% if low_stock %}<span class="badge badge-danger" style="padding:1px 6px;margin-left:4px">{{ low_stock|length }}</span>{% endif %}</a>
+  <a href="{{ url_for('stock.movements') }}" class="btn btn-outline btn-sm"><i class="bi bi-clock-history"></i> History</a>
+  <a href="{{ url_for('stock.adjust') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-slash-minus"></i> Adjust Stock</a>
+{% endblock %}
+{% block content %}
+{% if low_stock %}
+<div class="alert alert-warning">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <div><strong>{{ low_stock|length }} product(s)</strong> are at or below reorder level. <a href="{{ url_for('stock.alerts') }}">View alerts →</a></div>
+</div>
+{% endif %}
+<div class="card">
+  <div class="card-header"><span>All Stock</span><span class="badge badge-primary">{{ all_stock|length }} products</span></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Quantity</th><th>Reorder Level</th><th>Status</th><th>Last Updated</th><th></th></tr></thead>
+      <tbody>
+        {% for s in all_stock %}
+        <tr>
+          <td><strong>{{ s.product.name }}</strong></td>
+          <td><code>{{ s.product.sku }}</code></td>
+          <td>{{ s.product.category.name if s.product.category else '—' }}</td>
+          <td class="fw-bold {% if s.quantity == 0 %}text-danger{% elif s.is_low %}text-warning{% else %}text-success{% endif %}">{{ s.quantity }}</td>
+          <td class="text-muted">{{ s.product.reorder_level }}</td>
+          <td>
+            {% if s.quantity == 0 %}<span class="badge badge-danger">Out of stock</span>
+            {% elif s.is_low %}<span class="badge badge-warning">Low stock</span>
+            {% else %}<span class="badge badge-success">OK</span>{% endif %}
+          </td>
+          <td class="text-muted fs-sm">{{ s.last_updated.strftime('%d %b %Y %H:%M') if s.last_updated else '—' }}</td>
+          <td><a href="{{ url_for('stock.adjust', product_id=s.product.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-slash-minus"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8"><div class="empty-state"><i class="bi bi-boxes"></i><p>No stock records yet.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

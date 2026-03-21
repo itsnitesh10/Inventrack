@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}New Order — InvenTrack{% endblock %}
+{% block page_title %}Create Purchase Order{% endblock %}
+{% block page_sub %}Add products and quantities{% endblock %}
+{% block topbar_actions %}<a href="{{ url_for('orders.index') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<form method="POST" id="orderForm">
+  <div class="row">
+    <div class="col-8">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span>Order Items</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addRow"><i class="bi bi-plus-lg"></i> Add Product</button>
+        </div>
+        <div class="card-body" id="itemsContainer">
+          <div class="item-row" style="display:grid;grid-template-columns:1fr 100px 120px 36px;gap:10px;margin-bottom:10px">
+            <select name="product_id[]" class="form-select prod-select" required>
+              <option value="">— Select product —</option>
+              {% for p in products %}<option value="{{ p.id }}" data-price="{{ p.unit_price }}">{{ p.name }} ({{ p.sku }})</option>{% endfor %}
+            </select>
+            <input type="number" name="quantity[]" class="form-control" placeholder="Qty" min="1" required/>
+            <input type="number" step="0.01" name="unit_price[]" class="form-control" placeholder="Price"/>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card">
+        <div class="card-header">Order Details</div>
+        <div class="card-body">
+          <div style="margin-bottom:14px">
+            <label class="form-label">Supplier</label>
+            <input type="text" name="supplier" class="form-control" placeholder="Supplier name"/>
+          </div>
+          <div style="margin-bottom:20px">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Any notes..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block"><i class="bi bi-check-lg"></i> Create Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+const priceMap = {};
+{% for p in products %}priceMap[{{ p.id }}] = {{ p.unit_price }};{% endfor %}
+
+document.getElementById('addRow').addEventListener('click', () => {
+  const c = document.getElementById('itemsContainer');
+  const first = c.querySelector('.item-row');
+  const clone = first.cloneNode(true);
+  clone.querySelectorAll('input').forEach(i => i.value = '');
+  clone.querySelector('select').value = '';
+  const rb = clone.querySelector('.remove-row');
+  rb.disabled = false;
+  rb.addEventListener('click', () => clone.remove());
+  clone.querySelector('.prod-select').addEventListener('change', function(){
+    clone.querySelector('input[name="unit_price[]"]').value = priceMap[this.value] || '';
+  });
+  c.appendChild(clone);
+});
+document.querySelector('.prod-select').addEventListener('change', function(){
+  this.closest('.item-row').querySelector('input[name="unit_price[]"]').value = priceMap[this.value] || '';
+});
+</script>
+{% endblock %}

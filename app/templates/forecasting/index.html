@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Forecasting — InvenTrack{% endblock %}
+{% block page_title %}Demand Forecasting{% endblock %}
+{% block page_sub %}ML-powered predictions using stock-out history{% endblock %}
+{% block topbar_actions %}
+  {% if products_with_data %}<a href="{{ url_for('forecasting.summary') }}" class="btn btn-outline btn-sm"><i class="bi bi-table"></i> All Forecasts</a>{% endif %}
+{% endblock %}
+{% block content %}
+{% if not products_with_data %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle-fill"></i>
+  <div><strong>No forecast data yet.</strong> Record at least 5 stock-out movements for a product to enable forecasting. <a href="{{ url_for('stock.adjust') }}">Go to Stock Adjust →</a></div>
+</div>
+{% endif %}
+<div class="row">
+  {% for p in products %}
+  <div class="col-4" style="min-width:240px">
+    <div class="card" style="height:100%">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <h6 style="font-weight:600;margin:0;font-size:14px">{{ p.name }}</h6>
+          {% if p in products_with_data %}<span class="badge badge-success">Ready</span>
+          {% else %}<span class="badge badge-gray">Need more data</span>{% endif %}
+        </div>
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px"><code>{{ p.sku }}</code></p>
+        {% if p in products_with_data %}
+        <a href="{{ url_for('forecasting.product_forecast', product_id=p.id) }}" class="btn btn-primary btn-sm btn-block"><i class="bi bi-graph-up"></i> View Forecast</a>
+        {% else %}
+        <button class="btn btn-sm btn-block btn-outline" disabled style="cursor:not-allowed">Need 5+ stock-out records</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12"><div class="card"><div class="empty-state"><i class="bi bi-graph-up-arrow"></i><p>No products yet. <a href="{{ url_for('products.add') }}">Add products</a> to get started.</p></div></div></div>
+  {% endfor %}
+</div>
+{% endblock %}
